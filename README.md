@@ -19,7 +19,7 @@ prisma/             # schema + migraciones + seed
 ## Requisitos
 
 - Node 20+
-- PostgreSQL 16 (o `docker compose` desde la raíz del repo)
+- PostgreSQL 16 (local, o un Postgres administrado como Vercel Postgres / Neon / Supabase)
 
 ## Setup local
 
@@ -31,16 +31,34 @@ npm run db:seed           # crea el SUPERADMIN (SUPERADMIN_EMAIL/PASSWORD)
 npm run dev               # http://localhost:4000
 ```
 
-## Con Docker (recomendado)
+## Deploy en Vercel
 
-Desde la raíz del repositorio (`e:\Garcas`):
+Proyecto Vercel con **Root Directory = `Backend`**. La configuración vive en
+`vercel.json`:
 
-```bash
-docker compose up --build
+```jsonc
+{
+  "framework": "nextjs",
+  "buildCommand": "prisma generate && prisma migrate deploy && next build"
+}
 ```
 
-Levanta `postgres`, `arca` (FastAPI), `backend` (esta API, puerto 4000) y
-`mailhog`. El backend aplica migraciones y siembra el SUPERADMIN al arrancar.
+Cada build genera el cliente Prisma y aplica migraciones contra la base productiva.
+
+Pasos:
+
+1. Aprovisionar un Postgres administrado (Vercel Postgres, Neon, Supabase…).
+   `DATABASE_URL` debe ser una conexión **directa** (no pooler) para que
+   `prisma migrate deploy` funcione en build.
+2. Cargar en **Settings → Environment Variables** todas las claves de la sección
+   de abajo (`DATABASE_URL`, secretos JWT, Gmail, Didit, Google, `ARCA_BASE_URL`
+   apuntando al deploy Vercel del microservicio ARCA, `WEB_APP_URL` = dominio del
+   frontend).
+3. Tras el primer deploy, ejecutar el seed una única vez desde tu máquina apuntando
+   a la base productiva: `DATABASE_URL=... npm run db:seed`.
+
+El runtime de las route handlers es Node.js (`export const runtime = "nodejs"`),
+requerido por Prisma, bcrypt y nodemailer.
 
 ## Variables de entorno
 
