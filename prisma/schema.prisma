@@ -1,0 +1,370 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ---------------------------------------------------------------------------
+// Enums
+// ---------------------------------------------------------------------------
+
+enum SystemRole {
+  SUPERADMIN
+  ADMIN
+  USER
+}
+
+enum OrgRole {
+  OWNER
+  ADMIN
+  MEMBER
+}
+
+enum SubRole {
+  DEV
+  CONTABILIDAD
+  ADMINISTRACION
+}
+
+enum MembershipStatus {
+  ACTIVE
+  INVITED
+  DISABLED
+}
+
+enum InvitationStatus {
+  PENDING
+  ACCEPTED
+  EXPIRED
+  REVOKED
+}
+
+enum PlanId {
+  free
+  fixed
+  usage
+}
+
+enum KycStatus {
+  NOT_STARTED
+  PENDING
+  APPROVED
+  DECLINED
+}
+
+enum ApiKeyStatus {
+  active
+  suspended
+  revoked
+}
+
+enum CycleStatus {
+  open
+  closed
+}
+
+enum InvoiceStatus {
+  pending
+  paid
+  overdue
+  void
+}
+
+enum OtpPurpose {
+  EMAIL_VERIFY
+  LOGIN_2FA
+  PASSWORD_RESET
+}
+
+enum TicketStatus {
+  open
+  pending
+  resolved
+  closed
+}
+
+enum TicketPriority {
+  low
+  medium
+  high
+  urgent
+}
+
+// ---------------------------------------------------------------------------
+// Identity
+// ---------------------------------------------------------------------------
+
+model User {
+  id                String     @id @default(uuid())
+  email             String     @unique
+  passwordHash      String?
+  googleId          String?    @unique
+  name              String?
+  systemRole        SystemRole @default(USER)
+  emailVerified     Boolean    @default(false)
+  twoFactorEnabled  Boolean    @default(false)
+  twoFactorSecret   String?
+  kycStatus         KycStatus  @default(NOT_STARTED)
+  createdAt         DateTime   @default(now())
+  updatedAt         DateTime   @updatedAt
+
+  ownedOrganizations Organization[] @relation("OrgOwner")
+  memberships        Membership[]
+  refreshTokens      RefreshToken[]
+  otpCodes           OtpCode[]
+  kycSessions        KycSession[]
+  auditLogs          AuditLog[]     @relation("AuditActor")
+  ticketsCreated     Ticket[]       @relation("TicketAuthor")
+  ticketMessages     TicketMessage[]
+}
+
+model Organization {
+  id         String    @id @default(uuid())
+  name       String
+  ownerId    String
+  owner      User      @relation("OrgOwner", fields: [ownerId], references: [id])
+  planId     PlanId    @default(free)
+  kycStatus  KycStatus @default(NOT_STARTED)
+  arcaCuit   String?
+  clientType String?   @default("standard")
+  source     String?   @default("direct")
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  memberships   Membership[]
+  invitations   Invitation[]
+  apiKeys       ApiKey[]
+  usageRecords  UsageRecord[]
+  billingCycles BillingCycle[]
+  invoices      Invoice[]
+  items         Item[]
+  tickets       Ticket[]
+}
+
+model Membership {
+  id        String           @id @default(uuid())
+  userId    String
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  orgId     String
+  org       Organization     @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  orgRole   OrgRole          @default(MEMBER)
+  subRole   SubRole?
+  status    MembershipStatus @default(ACTIVE)
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+
+  @@unique([userId, orgId])
+  @@index([orgId])
+}
+
+model Invitation {
+  id        String           @id @default(uuid())
+  orgId     String
+  org       Organization     @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  email     String
+  subRole   SubRole          @default(DEV)
+  orgRole   OrgRole          @default(MEMBER)
+  tokenHash String           @unique
+  status    InvitationStatus @default(PENDING)
+  invitedBy String
+  expiresAt DateTime
+  createdAt DateTime         @default(now())
+
+  @@index([orgId])
+  @@index([email])
+}
+
+// ---------------------------------------------------------------------------
+// Sessions / OTP
+// ---------------------------------------------------------------------------
+
+model RefreshToken {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash String   @unique
+  expiresAt DateTime
+  revoked   Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+}
+
+model OtpCode {
+  id        String     @id @default(uuid())
+  userId    String
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  codeHash  String
+  purpose   OtpPurpose
+  expiresAt DateTime
+  consumed  Boolean    @default(false)
+  createdAt DateTime   @default(now())
+
+  @@index([userId, purpose])
+}
+
+// ---------------------------------------------------------------------------
+// KYC
+// ---------------------------------------------------------------------------
+
+model KycSession {
+  id              String    @id @default(uuid())
+  userId          String
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  orgId           String?
+  diditSessionId  String    @unique
+  status          KycStatus @default(PENDING)
+  url             String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@index([userId])
+}
+
+// ---------------------------------------------------------------------------
+// API Keys / Usage / Billing
+// ---------------------------------------------------------------------------
+
+model ApiKey {
+  id         String       @id @default(uuid())
+  orgId      String
+  org        Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  name       String       @default("default")
+  prefix     String       @unique
+  keyHash    String       @unique
+  status     ApiKeyStatus @default(active)
+  lastUsedAt DateTime?
+  usageStartedAt DateTime  @default(now())
+  cycleEndsAt    DateTime?
+  createdAt  DateTime     @default(now())
+  revokedAt  DateTime?
+
+  usageRecords UsageRecord[]
+
+  @@index([orgId])
+}
+
+model UsageRecord {
+  id        String       @id @default(uuid())
+  apiKeyId  String
+  apiKey    ApiKey       @relation(fields: [apiKeyId], references: [id], onDelete: Cascade)
+  orgId     String
+  org       Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  endpoint  String
+  method    String       @default("POST")
+  units     Int          @default(1)
+  cost      Decimal      @default(0) @db.Decimal(12, 2)
+  statusCode Int         @default(200)
+  createdAt DateTime     @default(now())
+
+  @@index([orgId, createdAt])
+  @@index([apiKeyId, createdAt])
+}
+
+model BillingCycle {
+  id        String       @id @default(uuid())
+  orgId     String
+  org       Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  startsAt  DateTime
+  endsAt    DateTime
+  status    CycleStatus  @default(open)
+  createdAt DateTime     @default(now())
+
+  invoice   Invoice?
+
+  @@index([orgId])
+}
+
+model Invoice {
+  id          String        @id @default(uuid())
+  orgId       String
+  org         Organization  @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  cycleId     String?       @unique
+  cycle       BillingCycle? @relation(fields: [cycleId], references: [id])
+  periodStart DateTime
+  periodEnd   DateTime
+  amount      Decimal       @db.Decimal(12, 2)
+  units       Int           @default(0)
+  status      InvoiceStatus @default(pending)
+  dueAt       DateTime
+  issuedAt    DateTime      @default(now())
+  paidAt      DateTime?
+
+  @@index([orgId])
+}
+
+// ---------------------------------------------------------------------------
+// ARCA items
+// ---------------------------------------------------------------------------
+
+model Item {
+  id          String       @id @default(uuid())
+  orgId       String
+  org         Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  sku         String?
+  description String
+  unitPrice   Decimal      @default(0) @db.Decimal(12, 2)
+  ivaRate     Decimal      @default(21) @db.Decimal(5, 2)
+  metadata    Json?
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  @@index([orgId])
+}
+
+// ---------------------------------------------------------------------------
+// Support tickets
+// ---------------------------------------------------------------------------
+
+model Ticket {
+  id        String         @id @default(uuid())
+  orgId     String
+  org       Organization   @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  authorId  String
+  author    User           @relation("TicketAuthor", fields: [authorId], references: [id])
+  subject   String
+  category  String         @default("general")
+  status    TicketStatus   @default(open)
+  priority  TicketPriority @default(medium)
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+
+  messages TicketMessage[]
+
+  @@index([orgId])
+  @@index([status])
+}
+
+model TicketMessage {
+  id        String   @id @default(uuid())
+  ticketId  String
+  ticket    Ticket   @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  authorId  String
+  author    User     @relation(fields: [authorId], references: [id])
+  body      String
+  isStaff   Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([ticketId])
+}
+
+// ---------------------------------------------------------------------------
+// Audit
+// ---------------------------------------------------------------------------
+
+model AuditLog {
+  id        String   @id @default(uuid())
+  actorId   String?
+  actor     User?    @relation("AuditActor", fields: [actorId], references: [id])
+  action    String
+  target    String?
+  metadata  Json?
+  ip        String?
+  createdAt DateTime @default(now())
+
+  @@index([actorId])
+  @@index([action])
+}
