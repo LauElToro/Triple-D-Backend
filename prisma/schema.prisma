@@ -98,18 +98,21 @@ enum TicketPriority {
 // ---------------------------------------------------------------------------
 
 model User {
-  id                String     @id @default(uuid())
-  email             String     @unique
-  passwordHash      String?
-  googleId          String?    @unique
-  name              String?
-  systemRole        SystemRole @default(USER)
-  emailVerified     Boolean    @default(false)
-  twoFactorEnabled  Boolean    @default(false)
-  twoFactorSecret   String?
-  kycStatus         KycStatus  @default(NOT_STARTED)
-  createdAt         DateTime   @default(now())
-  updatedAt         DateTime   @updatedAt
+  id                   String     @id @default(uuid())
+  email                String     @unique
+  passwordHash         String?
+  googleId             String?    @unique
+  name                 String?
+  systemRole           SystemRole @default(USER)
+  emailVerified        Boolean    @default(false)
+  twoFactorEnabled     Boolean    @default(false)
+  twoFactorSecret      String?
+  kycStatus            KycStatus  @default(NOT_STARTED)
+  lastLoginAt          DateTime?
+  onboardingSkippedAt  DateTime?
+  tourCompleted        Json?
+  createdAt            DateTime   @default(now())
+  updatedAt            DateTime   @updatedAt
 
   ownedOrganizations Organization[] @relation("OrgOwner")
   memberships        Membership[]
@@ -119,20 +122,26 @@ model User {
   auditLogs          AuditLog[]     @relation("AuditActor")
   ticketsCreated     Ticket[]       @relation("TicketAuthor")
   ticketMessages     TicketMessage[]
+  loginEvents        LoginEvent[]
 }
 
 model Organization {
-  id         String    @id @default(uuid())
-  name       String
-  ownerId    String
-  owner      User      @relation("OrgOwner", fields: [ownerId], references: [id])
-  planId     PlanId    @default(free)
-  kycStatus  KycStatus @default(NOT_STARTED)
-  arcaCuit   String?
-  clientType String?   @default("standard")
-  source     String?   @default("direct")
-  createdAt  DateTime  @default(now())
-  updatedAt  DateTime  @updatedAt
+  id                    String    @id @default(uuid())
+  name                  String
+  ownerId               String
+  owner                 User      @relation("OrgOwner", fields: [ownerId], references: [id])
+  planId                PlanId    @default(free)
+  kycStatus             KycStatus @default(NOT_STARTED)
+  arcaCuit              String?
+  clientType            String?   @default("standard")
+  source                String?   @default("direct")
+  heardAbout            String?
+  intendedUse           String?
+  companyRole           String?
+  companySize           String?
+  onboardingCompletedAt DateTime?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
 
   memberships   Membership[]
   invitations   Invitation[]
@@ -142,6 +151,7 @@ model Organization {
   invoices      Invoice[]
   items         Item[]
   tickets       Ticket[]
+  loginEvents   LoginEvent[]
 }
 
 model Membership {
@@ -248,20 +258,44 @@ model ApiKey {
 }
 
 model UsageRecord {
-  id        String       @id @default(uuid())
-  apiKeyId  String
-  apiKey    ApiKey       @relation(fields: [apiKeyId], references: [id], onDelete: Cascade)
-  orgId     String
-  org       Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
-  endpoint  String
-  method    String       @default("POST")
-  units     Int          @default(1)
-  cost      Decimal      @default(0) @db.Decimal(12, 2)
-  statusCode Int         @default(200)
-  createdAt DateTime     @default(now())
+  id           String       @id @default(uuid())
+  apiKeyId     String
+  apiKey       ApiKey       @relation(fields: [apiKeyId], references: [id], onDelete: Cascade)
+  orgId        String
+  org          Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  endpoint     String
+  method       String       @default("POST")
+  service      String?
+  units        Int          @default(1)
+  cost         Decimal      @default(0) @db.Decimal(12, 2)
+  providerCost Decimal      @default(0) @db.Decimal(12, 2)
+  statusCode   Int          @default(200)
+  createdAt    DateTime     @default(now())
 
   @@index([orgId, createdAt])
   @@index([apiKeyId, createdAt])
+  @@index([service, createdAt])
+}
+
+model LoginEvent {
+  id           String        @id @default(uuid())
+  userId       String
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  orgId        String?
+  org          Organization? @relation(fields: [orgId], references: [id], onDelete: SetNull)
+  ip           String?
+  userAgent    String?
+  country      String?
+  referrer     String?
+  landingPath  String?
+  utmSource    String?
+  utmMedium    String?
+  utmCampaign  String?
+  createdAt    DateTime      @default(now())
+
+  @@index([userId, createdAt])
+  @@index([createdAt])
+  @@index([country])
 }
 
 model BillingCycle {

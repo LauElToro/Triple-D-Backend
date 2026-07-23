@@ -13,7 +13,7 @@ export async function GET(req: Request) {
     const orgs = await prisma.organization.findMany({
       orderBy: { createdAt: "desc" },
       include: {
-        owner: { select: { email: true, name: true } },
+        owner: { select: { email: true, name: true, lastLoginAt: true } },
         _count: { select: { apiKeys: true, memberships: true, tickets: true } },
       },
     });
@@ -26,8 +26,12 @@ export async function GET(req: Request) {
         kycStatus: o.kycStatus,
         clientType: o.clientType,
         source: o.source,
+        companySize: o.companySize,
         arcaCuit: o.arcaCuit,
         owner: o.owner.email,
+        ownerName: o.owner.name,
+        lastLoginAt: o.owner.lastLoginAt,
+        onboardingCompletedAt: o.onboardingCompletedAt,
         keys: o._count.apiKeys,
         members: o._count.memberships,
         tickets: o._count.tickets,

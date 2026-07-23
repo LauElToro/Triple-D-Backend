@@ -1,5 +1,10 @@
 import { prisma } from "@/lib/prisma";
-import { requireUser, resolveOrgContext, requirePermission } from "@/interface/http/session";
+import {
+  requireUser,
+  resolveOrgContext,
+  requirePermission,
+  requireKycApproved,
+} from "@/interface/http/session";
 import { generateApiKey } from "@/infrastructure/security/apiKey";
 import { audit, clientIp } from "@/interface/http/audit";
 import { ok, error, handleError } from "@/interface/http/responses";
@@ -12,6 +17,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   try {
     const { id } = await params;
     const user = await requireUser(req);
+    requireKycApproved(user);
     const ctx = await resolveOrgContext(req, user);
     requirePermission(ctx, "keys:write");
 

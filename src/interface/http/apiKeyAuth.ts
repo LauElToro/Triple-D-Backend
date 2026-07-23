@@ -2,6 +2,7 @@ import type { ApiKey, Organization } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { hashApiKey, looksLikeApiKey } from "@/infrastructure/security/apiKey";
 import { getPlan, unitCostFor } from "@/domain/plans";
+import { providerCostFor, serviceFromEndpoint } from "@/domain/service-costs";
 import { HttpError } from "./responses";
 
 export interface ApiKeyContext {
@@ -90,6 +91,8 @@ export async function meterUsage(params: {
 }): Promise<void> {
   const units = params.units ?? 1;
   const cost = unitCostFor(params.ctx.org.planId, params.consumedBefore) * units;
+  const service = serviceFromEndpoint(params.endpoint);
+  const providerCost = providerCostFor(service, units);
 
   await prisma.$transaction([
     prisma.usageRecord.create({
@@ -98,8 +101,10 @@ export async function meterUsage(params: {
         orgId: params.ctx.org.id,
         endpoint: params.endpoint,
         method: params.method,
+        service,
         units,
         cost,
+        providerCost,
         statusCode: params.statusCode,
       },
     }),

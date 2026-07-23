@@ -2,6 +2,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { env } from "@/lib/env";
 import { issueSession, issuePendingAccessToken } from "@/application/auth/session-service";
+import { trackLogin, type AcquisitionPayload } from "@/application/auth/login-tracking";
 import { setRefreshCookie } from "@/interface/http/cookies";
 import { audit, clientIp } from "@/interface/http/audit";
 import { ok, error, handleError } from "@/interface/http/responses";
@@ -9,7 +10,18 @@ import { publicUser } from "@/interface/http/serializers";
 
 export const runtime = "nodejs";
 
-const schema = z.object({ credential: z.string().min(10) });
+const schema = z.object({
+  credential: z.string().min(10),
+  acquisition: z
+    .object({
+      referrer: z.string().max(512).optional(),
+      landingPath: z.string().max(256).optional(),
+      utmSource: z.string().max(128).optional(),
+      utmMedium: z.string().max(128).optional(),
+      utmCampaign: z.string().max(128).optional(),
+    })
+    .optional(),
+});
 
 interface GoogleTokenInfo {
   aud: string;
@@ -77,6 +89,16 @@ export async function POST(req: Request) {
     }
 
     const session = await issueSession(user);
+    const membership = await prisma.membership.findFirst({
+      where: { userId: user.id, status: "ACTIVE" },
+      orderBy: { createdAt: "asc" },
+    });
+    await trackLogin({
+      req,
+      userId: user.id,
+      orgId: membership?.orgId,
+      acquisition: parsed.data.acquisition as AcquisitionPayload | undefined,
+    });
     await audit({ actorId: user.id, action: "auth.login.google", ip: clientIp(req) });
 
     const res = ok({

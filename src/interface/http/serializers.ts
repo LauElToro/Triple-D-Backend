@@ -10,6 +10,9 @@ export function publicUser(user: User) {
     emailVerified: user.emailVerified,
     twoFactorEnabled: user.twoFactorEnabled,
     kycStatus: user.kycStatus,
+    lastLoginAt: user.lastLoginAt,
+    onboardingSkippedAt: user.onboardingSkippedAt,
+    tourCompleted: (user.tourCompleted as Record<string, string> | null) ?? null,
     createdAt: user.createdAt,
   };
 }
@@ -22,6 +25,12 @@ export function publicOrg(org: Organization, membership?: Membership | null) {
     kycStatus: org.kycStatus,
     arcaCuit: org.arcaCuit,
     clientType: org.clientType,
+    source: org.source,
+    heardAbout: org.heardAbout,
+    intendedUse: org.intendedUse,
+    companyRole: org.companyRole,
+    companySize: org.companySize,
+    onboardingCompletedAt: org.onboardingCompletedAt,
     orgRole: membership?.orgRole ?? "OWNER",
     subRole: membership?.subRole ?? null,
     permissions: membership

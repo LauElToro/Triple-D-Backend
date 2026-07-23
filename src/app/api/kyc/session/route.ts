@@ -12,6 +12,20 @@ export async function POST(req: Request) {
   try {
     const user = await requireUser(req);
 
+    // Reuse an open PENDING session with a URL when possible.
+    const existing = await prisma.kycSession.findFirst({
+      where: { userId: user.id, status: "PENDING", url: { not: null } },
+      orderBy: { createdAt: "desc" },
+    });
+    if (existing?.url) {
+      return ok({
+        url: existing.url,
+        sessionId: existing.diditSessionId,
+        status: "PENDING",
+        reused: true,
+      });
+    }
+
     const session = await createDiditSession({
       vendorData: user.id,
       callbackUrl: `${env.webAppUrl}/kyc/complete`,
@@ -32,7 +46,7 @@ export async function POST(req: Request) {
     });
 
     await audit({ actorId: user.id, action: "kyc.session_created", ip: clientIp(req) });
-    return ok({ url: session.url, sessionId: session.session_id, status: "PENDING" });
+    return ok({ url: session.url, sessionId: session.session_id, status: "PENDING", reused: false });
   } catch (err) {
     return handleError(err);
   }
