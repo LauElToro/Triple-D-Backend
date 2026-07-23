@@ -9,10 +9,16 @@ function required(name: string, fallback?: string): string {
   return value;
 }
 
+/** Primary app origin (first entry if WEB_APP_URL is a CORS allowlist). */
+function primaryWebAppUrl(): string {
+  const raw = required("WEB_APP_URL", "http://localhost:3000");
+  return raw.split(",")[0]?.trim() || "http://localhost:3000";
+}
+
 export const env = {
   databaseUrl: required("DATABASE_URL"),
   apiUrl: required("API_URL", "http://localhost:4000"),
-  webAppUrl: required("WEB_APP_URL", "http://localhost:3000"),
+  webAppUrl: primaryWebAppUrl(),
 
   jwtAccessSecret: required("JWT_ACCESS_SECRET", "dev-access-secret"),
   jwtRefreshSecret: required("JWT_REFRESH_SECRET", "dev-refresh-secret"),

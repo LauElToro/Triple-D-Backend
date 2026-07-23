@@ -35,12 +35,19 @@ export async function GET(req: Request) {
     const daily = labels.map((day) => ({ day, count: days[day] ?? 0 }));
 
     const units = cycleAgg._sum.units ?? 0;
+    const unlimited = plan.cap === Number.POSITIVE_INFINITY;
     return ok({
-      plan: { id: plan.id, name: plan.name, cap: plan.cap, includedUnits: plan.includedUnits, unitCost: plan.unitCost },
+      plan: {
+        id: plan.id,
+        name: plan.name,
+        cap: unlimited ? null : plan.cap,
+        includedUnits: plan.includedUnits,
+        unitCost: plan.unitCost,
+      },
       cycle: {
         units,
         cost: Number(cycleAgg._sum.cost ?? 0),
-        remaining: plan.cap === Number.POSITIVE_INFINITY ? null : Math.max(0, plan.cap - units),
+        remaining: unlimited ? null : Math.max(0, plan.cap - units),
       },
       daily,
     });

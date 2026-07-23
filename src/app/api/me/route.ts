@@ -17,11 +17,16 @@ export async function GET(req: Request) {
 
     // SUPERADMIN may not have a membership; expose owned orgs if any.
     const orgs = memberships.map((m) => publicOrg(m.org, m));
+    const requestedOrgId = req.headers.get("x-org-id");
+    const activeOrg =
+      (requestedOrgId ? orgs.find((o) => o.id === requestedOrgId) : undefined) ??
+      orgs[0] ??
+      null;
 
     return ok({
       user: publicUser(user),
       organizations: orgs,
-      activeOrg: orgs[0] ?? null,
+      activeOrg,
     });
   } catch (err) {
     return handleError(err);
