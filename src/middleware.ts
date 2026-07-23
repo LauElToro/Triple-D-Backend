@@ -16,14 +16,32 @@ import { NextResponse, type NextRequest } from "next/server";
 const ALLOWED_METHODS = "GET,POST,PUT,PATCH,DELETE,OPTIONS";
 const ALLOWED_HEADERS = "Content-Type, Authorization, X-Api-Key, X-Org-Id";
 
+/** Known production frontends (safety net if WEB_APP_URL is missing on Vercel). */
+const BUILTIN_ORIGINS = ["https://triple-d-pay.vercel.app"];
+
 function resolveAllowedOrigin(origin: string | null): string | null {
   if (!origin) return null;
 
-  const allowlist = (process.env.WEB_APP_URL || "http://localhost:3000")
+  const fromEnv = (process.env.WEB_APP_URL || "")
     .split(",")
     .map((s) => s.trim())
     .filter(Boolean);
+  const allowlist = [...new Set([...BUILTIN_ORIGINS, ...fromEnv])];
   if (allowlist.includes(origin)) return origin;
+
+  // Preview deployments of the same Vercel project (triple-d-pay-*.vercel.app).
+  try {
+    const { hostname } = new URL(origin);
+    if (
+      hostname === "triple-d-pay.vercel.app" ||
+      hostname.endsWith("-triple-d-pay.vercel.app") ||
+      /^triple-d-pay-[a-z0-9-]+\.vercel\.app$/i.test(hostname)
+    ) {
+      return origin;
+    }
+  } catch {
+    /* ignore malformed origin */
+  }
 
   if (process.env.NODE_ENV !== "production") {
     try {
