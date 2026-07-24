@@ -1,6 +1,6 @@
-# Triple D — API
+# Set-Api — API
 
-Backend del SaaS Triple D: **Next.js (App Router) + DDD + Prisma + PostgreSQL**.
+Backend del SaaS Set-Api: **Next.js (App Router) + DDD + Prisma + PostgreSQL**.
 Gestiona identidad, roles/permisos, 2FA, KYC (Didit), API Keys con metering,
 facturación por ciclo, proxy a ARCA, tickets de soporte y métricas.
 

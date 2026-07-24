@@ -1,4 +1,4 @@
-const BRAND = "Triple D";
+const BRAND = "Set-Api";
 const ACCENT = "#e8562a";
 
 function layout(title: string, body: string): string {
@@ -43,7 +43,7 @@ export function welcomeTemplate(email: string) {
   return {
     subject: `${BRAND} · Cuenta creada`,
     html: layout(
-      "Bienvenido a Triple D",
+      "Bienvenido a Set-Api",
       `<p>Tu cuenta <b>${email}</b> fue creada. El siguiente paso es completar la verificación de identidad (KYC) para operar.</p>`
     ),
   };

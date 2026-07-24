@@ -17,7 +17,7 @@ const ALLOWED_METHODS = "GET,POST,PUT,PATCH,DELETE,OPTIONS";
 const ALLOWED_HEADERS = "Content-Type, Authorization, X-Api-Key, X-Org-Id";
 
 /** Known production frontends (safety net if WEB_APP_URL is missing on Vercel). */
-const BUILTIN_ORIGINS = ["https://triple-d-pay.vercel.app"];
+const BUILTIN_ORIGINS = ["https://set-api-web.vercel.app"];
 
 function resolveAllowedOrigin(origin: string | null): string | null {
   if (!origin) return null;
@@ -29,13 +29,13 @@ function resolveAllowedOrigin(origin: string | null): string | null {
   const allowlist = [...new Set([...BUILTIN_ORIGINS, ...fromEnv])];
   if (allowlist.includes(origin)) return origin;
 
-  // Preview deployments of the same Vercel project (triple-d-pay-*.vercel.app).
+  // Preview deployments of the same Vercel project (set-api-web-*.vercel.app).
   try {
     const { hostname } = new URL(origin);
     if (
-      hostname === "triple-d-pay.vercel.app" ||
-      hostname.endsWith("-triple-d-pay.vercel.app") ||
-      /^triple-d-pay-[a-z0-9-]+\.vercel\.app$/i.test(hostname)
+      hostname === "set-api-web.vercel.app" ||
+      hostname.endsWith("-set-api-web.vercel.app") ||
+      /^set-api-web-[a-z0-9-]+\.vercel\.app$/i.test(hostname)
     ) {
       return origin;
     }

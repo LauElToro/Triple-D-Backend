@@ -24,7 +24,7 @@ function buildUrl(path: string, query?: ArcaRequest["query"]): string {
 }
 
 /**
- * Thin authenticated proxy to the ARCA FastAPI gateway (TRIPLE_D_ARCA-main).
+ * Thin authenticated proxy to the ARCA FastAPI gateway (SET_API_ARCA).
  * Auth is via the shared X-API-Key; the per-client CUIT is passed per request.
  */
 export async function callArca<T = unknown>(req: ArcaRequest): Promise<ArcaResult<T>> {

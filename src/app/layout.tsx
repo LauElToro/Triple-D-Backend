@@ -1,6 +1,6 @@
 export const metadata = {
-  title: "Triple D API",
-  description: "Triple D SaaS backend",
+  title: "Set-Api API",
+  description: "Set-Api SaaS backend",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

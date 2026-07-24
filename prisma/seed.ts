@@ -30,7 +30,7 @@ async function main() {
   const org = await prisma.organization.findFirst({ where: { ownerId: user.id } });
   if (!org) {
     const created = await prisma.organization.create({
-      data: { name: "Triple D (interno)", ownerId: user.id, planId: "usage", kycStatus: "APPROVED" },
+      data: { name: "Set-Api (interno)", ownerId: user.id, planId: "usage", kycStatus: "APPROVED" },
     });
     await prisma.membership.create({
       data: { userId: user.id, orgId: created.id, orgRole: "OWNER" },

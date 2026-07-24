@@ -8,7 +8,7 @@ export function generateTotpSecret(): string {
 }
 
 export function totpUri(email: string, secret: string): string {
-  return authenticator.keyuri(email, "Triple D", secret);
+  return authenticator.keyuri(email, "Set-Api", secret);
 }
 
 export async function totpQrDataUrl(email: string, secret: string): Promise<string> {

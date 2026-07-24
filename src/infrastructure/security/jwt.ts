@@ -14,14 +14,14 @@ export async function signAccessToken(claims: AccessTokenClaims): Promise<string
   return new SignJWT({ ...claims })
     .setProtectedHeader({ alg: "HS256" })
     .setIssuedAt()
-    .setIssuer("triple-d")
+    .setIssuer("set-api")
     .setExpirationTime(`${env.accessTokenTtlSeconds}s`)
     .sign(accessKey);
 }
 
 export async function verifyAccessToken(token: string): Promise<AccessTokenClaims | null> {
   try {
-    const { payload } = await jwtVerify(token, accessKey, { issuer: "triple-d" });
+    const { payload } = await jwtVerify(token, accessKey, { issuer: "set-api" });
     return payload as unknown as AccessTokenClaims;
   } catch {
     return null;

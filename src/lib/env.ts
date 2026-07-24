@@ -33,7 +33,7 @@ export const env = {
 
   gmailUser: process.env.GMAIL_USER ?? "",
   gmailAppPassword: process.env.GMAIL_APP_PASSWORD ?? "",
-  mailFrom: process.env.MAIL_FROM ?? "Triple D <no-reply@example.com>",
+  mailFrom: process.env.MAIL_FROM ?? "Set-Api <no-reply@example.com>",
 
   diditApiKey: process.env.DIDIT_API_KEY ?? "",
   diditWebhookSecret: process.env.DIDIT_WEBHOOK_SECRET ?? "",

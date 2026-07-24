@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { env } from "@/lib/env";
 
-export const REFRESH_COOKIE = "td_refresh";
+export const REFRESH_COOKIE = "sa_refresh";
 
 // In production the frontend and API live on different domains (Vercel), so the
 // refresh cookie must be SameSite=None + Secure to be sent on cross-site fetches.
