@@ -17,7 +17,11 @@ const ALLOWED_METHODS = "GET,POST,PUT,PATCH,DELETE,OPTIONS";
 const ALLOWED_HEADERS = "Content-Type, Authorization, X-Api-Key, X-Org-Id";
 
 /** Known production frontends (safety net if WEB_APP_URL is missing on Vercel). */
-const BUILTIN_ORIGINS = ["https://set-api-web.vercel.app"];
+const BUILTIN_ORIGINS = [
+  "https://www.set-api.com",
+  "https://set-api.com",
+  "https://set-api-web.vercel.app",
+];
 
 function resolveAllowedOrigin(origin: string | null): string | null {
   if (!origin) return null;
