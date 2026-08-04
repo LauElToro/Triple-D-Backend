@@ -255,12 +255,7 @@ export function checkIntegrations(): ServiceCheck[] {
   return [
     integrationCheck("email", "Email (Gmail)", Boolean(env.gmailUser && env.gmailAppPassword), "SMTP"),
     integrationCheck("kyc-didit", "KYC (Didit)", Boolean(env.diditApiKey && env.diditWorkflowId), "Didit"),
-    integrationCheck(
-      "google-oauth",
-      "Google OAuth",
-      Boolean(env.googleClientId && env.googleClientSecret),
-      "OAuth"
-    ),
+    integrationCheck("google-oauth", "Google Sign-In", Boolean(env.googleClientId), "GIS"),
   ];
 }
 

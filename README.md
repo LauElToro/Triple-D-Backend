@@ -68,7 +68,7 @@ Ver `.env.example`. Claves principales:
 - `JWT_ACCESS_SECRET` / `JWT_REFRESH_SECRET` — firma de tokens (access 2h)
 - `GMAIL_USER` / `GMAIL_APP_PASSWORD` — envío de mails (registro, login, 2FA)
 - `DIDIT_API_KEY` / `DIDIT_WEBHOOK_SECRET` / `DIDIT_WORKFLOW_ID` — KYC
-- `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` — login con Google (placeholder)
+- `GOOGLE_CLIENT_ID` — Google Sign-In (GIS); mismo valor que `VITE_GOOGLE_CLIENT_ID` en Frontend
 - `ARCA_BASE_URL` / `ARCA_API_KEY` — gateway ARCA (FastAPI)
 
 ## Modelo de seguridad

@@ -27,9 +27,8 @@ export const env = {
 
   apiKeyPepper: required("API_KEY_PEPPER", "dev-pepper"),
 
+  /** Google Identity Services (ID token). Same value as Frontend VITE_GOOGLE_CLIENT_ID. */
   googleClientId: process.env.GOOGLE_CLIENT_ID ?? "",
-  googleClientSecret: process.env.GOOGLE_CLIENT_SECRET ?? "",
-  googleRedirectUri: process.env.GOOGLE_REDIRECT_URI ?? "",
 
   gmailUser: process.env.GMAIL_USER ?? "",
   gmailAppPassword: process.env.GMAIL_APP_PASSWORD ?? "",
