@@ -19,6 +19,7 @@ Copiá estas variables en **Settings → Environment Variables → Production** 
 | `API_KEY_PEPPER` | Secreto para hash de API Keys de clientes |
 | `ARCA_BASE_URL` | `https://set-api-arca-three.vercel.app` |
 | `ARCA_API_KEY` | **Igual** a `API_KEY` del proyecto SET_API_ARCA (≥24 chars en prod) |
+| `CRON_SECRET` | Secreto aleatorio ≥32 chars; Vercel lo envía como `Authorization: Bearer` al cron diario `/api/cron/billing` |
 
 ---
 

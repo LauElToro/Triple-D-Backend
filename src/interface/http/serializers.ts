@@ -1,4 +1,4 @@
-import type { ApiKey, Invoice, Organization, User, Membership } from "@prisma/client";
+import type { ApiKey, Invoice, Organization, User, Membership, Payment } from "@prisma/client";
 import { permissionsFor } from "./permissions";
 
 export function publicUser(user: User) {
@@ -22,6 +22,8 @@ export function publicOrg(org: Organization, membership?: Membership | null) {
     id: org.id,
     name: org.name,
     planId: org.planId,
+    pendingPlanId: org.pendingPlanId,
+    planStatus: org.planStatus,
     kycStatus: org.kycStatus,
     arcaCuit: org.arcaCuit,
     clientType: org.clientType,
@@ -63,5 +65,18 @@ export function publicInvoice(inv: Invoice) {
     dueAt: inv.dueAt,
     issuedAt: inv.issuedAt,
     paidAt: inv.paidAt,
+  };
+}
+
+export function publicPayment(payment: Payment) {
+  return {
+    id: payment.id,
+    invoiceId: payment.invoiceId,
+    provider: payment.provider,
+    status: payment.status,
+    amount: Number(payment.amount),
+    externalId: payment.externalId,
+    createdAt: payment.createdAt,
+    approvedAt: payment.approvedAt,
   };
 }

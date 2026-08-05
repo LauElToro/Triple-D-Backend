@@ -42,5 +42,7 @@ export const env = {
   arcaBaseUrl: required("ARCA_BASE_URL", "http://localhost:3000"),
   arcaApiKey: required("ARCA_API_KEY", "dev-local-key"),
 
+  cronSecret: process.env.CRON_SECRET ?? "",
+
   isProd: process.env.NODE_ENV === "production",
 };

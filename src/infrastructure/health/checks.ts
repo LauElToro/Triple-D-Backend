@@ -109,8 +109,19 @@ export async function checkBackendApi(): Promise<ServiceCheck> {
 
 interface ArcaProbe {
   status?: string;
-  checks?: { id: string; status: string; message?: string }[];
+  checks?: Record<string, boolean | string> | { id: string; status: string; message?: string }[];
   issues?: string[];
+}
+
+function normalizeArcaChecks(
+  checks: ArcaProbe["checks"]
+): { id: string; status: string; message?: string }[] {
+  if (!checks) return [];
+  if (Array.isArray(checks)) return checks;
+  return Object.entries(checks).map(([id, value]) => ({
+    id,
+    status: typeof value === "boolean" ? (value ? "ok" : "down") : String(value),
+  }));
 }
 
 export async function checkArca(): Promise<ServiceCheck> {
@@ -180,7 +191,7 @@ export async function checkArca(): Promise<ServiceCheck> {
       details: {
         healthStatus: health.status ?? "unknown",
         readyStatus: ready?.status ?? null,
-        checks: ready?.checks ?? health.checks ?? [],
+        checks: normalizeArcaChecks(ready?.checks ?? health.checks),
         readyLatencyMs: readyLatency,
         healthLatencyMs: latencyMs,
       },
@@ -292,7 +303,8 @@ export async function checkArcaApiRoutes(): Promise<ServiceCheck[]> {
     }
 
     const ready = (await res.json()) as ArcaProbe;
-    const byId = new Map((ready.checks ?? []).map((c) => [c.id, c]));
+    const normalized = normalizeArcaChecks(ready.checks);
+    const byId = new Map(normalized.map((c) => [c.id, c]));
     const perRouteLatency = Math.round(latencyMs / Math.max(1, routes.length));
 
     return routes.map((r) => {

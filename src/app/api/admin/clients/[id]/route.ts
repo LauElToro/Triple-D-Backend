@@ -67,6 +67,8 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
         id: org.id,
         name: org.name,
         planId: org.planId,
+        pendingPlanId: org.pendingPlanId,
+        planStatus: org.planStatus,
         kycStatus: org.kycStatus,
         arcaCuit: org.arcaCuit,
         clientType: org.clientType,

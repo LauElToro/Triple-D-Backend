@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { requireUser, resolveOrgContext, requirePermission, requireKycApproved } from "@/interface/http/session";
 import { generateApiKey } from "@/infrastructure/security/apiKey";
 import { audit, clientIp } from "@/interface/http/audit";
-import { ok, created, handleError } from "@/interface/http/responses";
+import { ok, created, handleError, HttpError } from "@/interface/http/responses";
 import { publicApiKey } from "@/interface/http/serializers";
 
 export const runtime = "nodejs";
@@ -35,6 +35,17 @@ export async function POST(req: Request) {
 
     const parsed = createSchema.safeParse(await req.json().catch(() => ({})));
     const name = parsed.success ? parsed.data.name ?? "default" : "default";
+
+    const existingActive = await prisma.apiKey.findFirst({
+      where: { orgId: ctx.org.id, status: "active" },
+    });
+    if (existingActive) {
+      throw new HttpError(
+        409,
+        "Ya existe una API Key activa. Usá la rotación para reemplazarla.",
+        "active_key_exists"
+      );
+    }
 
     const generated = generateApiKey();
     const now = new Date();

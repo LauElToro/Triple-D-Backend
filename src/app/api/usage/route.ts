@@ -1,9 +1,14 @@
 import { prisma } from "@/lib/prisma";
 import { requireUser, resolveOrgContext, requirePermission } from "@/interface/http/session";
+import { getCycleWindow } from "@/domain/billing-cycle";
 import { getPlan } from "@/domain/plans";
 import { ok, handleError } from "@/interface/http/responses";
 
 export const runtime = "nodejs";
+
+function isoDate(d: Date): string {
+  return d.toISOString().slice(0, 10);
+}
 
 export async function GET(req: Request) {
   try {
@@ -12,7 +17,19 @@ export async function GET(req: Request) {
     requirePermission(ctx, "usage:read");
 
     const plan = getPlan(ctx.org.planId);
-    const cycleStart = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+
+    const activeKey = await prisma.apiKey.findFirst({
+      where: { orgId: ctx.org.id, status: { in: ["active", "suspended"] } },
+      orderBy: { createdAt: "desc" },
+    });
+
+    const cycleStart = activeKey
+      ? getCycleWindow(activeKey.usageStartedAt).periodStart
+      : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setUTCHours(0, 0, 0, 0);
+    sevenDaysAgo.setUTCDate(sevenDaysAgo.getUTCDate() - 6);
 
     const [cycleAgg, records] = await Promise.all([
       prisma.usageRecord.aggregate({
@@ -20,19 +37,22 @@ export async function GET(req: Request) {
         _sum: { units: true, cost: true },
       }),
       prisma.usageRecord.findMany({
-        where: { orgId: ctx.org.id, createdAt: { gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) } },
+        where: { orgId: ctx.org.id, createdAt: { gte: sevenDaysAgo } },
         select: { units: true, createdAt: true },
       }),
     ]);
 
-    // Daily breakdown for the last 7 days.
     const days: Record<string, number> = {};
-    const labels = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"];
-    for (const r of records) {
-      const key = labels[r.createdAt.getDay()];
-      days[key] = (days[key] ?? 0) + r.units;
+    for (let i = 0; i < 7; i++) {
+      const d = new Date(sevenDaysAgo);
+      d.setUTCDate(sevenDaysAgo.getUTCDate() + i);
+      days[isoDate(d)] = 0;
     }
-    const daily = labels.map((day) => ({ day, count: days[day] ?? 0 }));
+    for (const r of records) {
+      const key = isoDate(r.createdAt);
+      if (key in days) days[key] = (days[key] ?? 0) + r.units;
+    }
+    const daily = Object.entries(days).map(([day, count]) => ({ day, count }));
 
     const units = cycleAgg._sum.units ?? 0;
     const unlimited = plan.cap === Number.POSITIVE_INFINITY;

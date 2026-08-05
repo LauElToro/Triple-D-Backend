@@ -70,6 +70,10 @@ export async function loginUser(email: string, password: string): Promise<LoginR
   const valid = await verifyPassword(password, user.passwordHash);
   if (!valid) throw new HttpError(401, "Credenciales inválidas", "invalid_credentials");
 
+  if (!user.emailVerified && !user.googleId) {
+    throw new HttpError(403, "Debés verificar tu email antes de iniciar sesión", "email_not_verified");
+  }
+
   if (user.twoFactorEnabled) {
     if (user.twoFactorSecret) {
       return { user, twoFactorRequired: true, twoFactorMethod: "totp" };

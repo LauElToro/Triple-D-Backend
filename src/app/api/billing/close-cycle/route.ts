@@ -25,6 +25,10 @@ export async function POST(req: Request) {
     if (!targetOrgId) requireSystemRole(user, ["SUPERADMIN"]);
 
     const invoice = await closeBillingCycleForOrg(targetOrgId!);
+    if (!invoice) {
+      return ok({ message: "No hay ciclo pendiente de cierre", invoice: null, suspended: 0 });
+    }
+
     let suspended = 0;
     if (parsed.success && parsed.data.suspendOverdue && user.systemRole === "SUPERADMIN") {
       suspended = await suspendOverdueOrgs();

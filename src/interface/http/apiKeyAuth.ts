@@ -1,6 +1,7 @@
 import type { ApiKey, Organization } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { hashApiKey, looksLikeApiKey } from "@/infrastructure/security/apiKey";
+import { getCycleWindow } from "@/domain/billing-cycle";
 import { getPlan, unitCostFor } from "@/domain/plans";
 import { providerCostFor, serviceFromEndpoint } from "@/domain/service-costs";
 import { HttpError } from "./responses";
@@ -44,13 +45,7 @@ export async function authenticateApiKey(req: Request): Promise<ApiKeyContext> {
 }
 
 function currentCycleStart(apiKey: ApiKey): Date {
-  // 30-day cycles anchored on usageStartedAt.
-  const start = apiKey.usageStartedAt.getTime();
-  const now = Date.now();
-  const cycleMs = 30 * 24 * 60 * 60 * 1000;
-  const elapsed = Math.max(0, now - start);
-  const cyclesPassed = Math.floor(elapsed / cycleMs);
-  return new Date(start + cyclesPassed * cycleMs);
+  return getCycleWindow(apiKey.usageStartedAt).periodStart;
 }
 
 /**
