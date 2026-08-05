@@ -52,8 +52,8 @@ Pasos:
    `prisma migrate deploy` funcione en build.
 2. Cargar en **Settings → Environment Variables** todas las claves de la sección
    de abajo (`DATABASE_URL`, secretos JWT, Gmail, Didit, Google, `ARCA_BASE_URL`
-   apuntando al deploy Vercel del microservicio ARCA, `WEB_APP_URL` = dominio del
-   frontend).
+   = URL del deploy Vercel de ARCA, `ARCA_API_KEY` = misma `API_KEY` del gateway,
+   `WEB_APP_URL` = dominio del frontend).
 3. Tras el primer deploy, ejecutar el seed una única vez desde tu máquina apuntando
    a la base productiva: `DATABASE_URL=... npm run db:seed`.
 
@@ -69,7 +69,9 @@ Ver `.env.example`. Claves principales:
 - `GMAIL_USER` / `GMAIL_APP_PASSWORD` — envío de mails (registro, login, 2FA)
 - `DIDIT_API_KEY` / `DIDIT_WEBHOOK_SECRET` / `DIDIT_WORKFLOW_ID` — KYC
 - `GOOGLE_CLIENT_ID` — Google Sign-In (GIS); mismo valor que `VITE_GOOGLE_CLIENT_ID` en Frontend
-- `ARCA_BASE_URL` / `ARCA_API_KEY` — gateway ARCA (FastAPI)
+- `ARCA_BASE_URL` / `ARCA_API_KEY` — gateway ARCA (FastAPI en Vercel). Prod:
+  `ARCA_BASE_URL=https://set-api-arca-three.vercel.app` y `ARCA_API_KEY` idéntica
+  a `API_KEY` del proyecto SET_API_ARCA. Ver [`SET_API_ARCA/VERCEL.env.template.md`](../SET_API_ARCA/VERCEL.env.template.md).
 
 ## Modelo de seguridad
 
@@ -103,4 +105,3 @@ Ver `.env.example`. Claves principales:
 | GET/POST | `/api/team/members` · `/api/team/invitations` | Equipo |
 | GET/POST | `/api/tickets` | Soporte |
 | GET | `/api/metrics` · `/api/admin/clients` | KPIs (SUPERADMIN) |
-```

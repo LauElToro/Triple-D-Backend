@@ -5,6 +5,8 @@ interface ArcaRequest {
   path: string;
   body?: unknown;
   query?: Record<string, string | number | undefined>;
+  /** Optional idempotency key forwarded to the ARCA gateway. */
+  idempotencyKey?: string | null;
 }
 
 export interface ArcaResult<T = unknown> {
@@ -28,12 +30,17 @@ function buildUrl(path: string, query?: ArcaRequest["query"]): string {
  * Auth is via the shared X-API-Key; the per-client CUIT is passed per request.
  */
 export async function callArca<T = unknown>(req: ArcaRequest): Promise<ArcaResult<T>> {
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    "X-API-Key": env.arcaApiKey,
+  };
+  if (req.idempotencyKey?.trim()) {
+    headers["Idempotency-Key"] = req.idempotencyKey.trim();
+  }
+
   const res = await fetch(buildUrl(req.path, req.query), {
     method: req.method,
-    headers: {
-      "Content-Type": "application/json",
-      "X-API-Key": env.arcaApiKey,
-    },
+    headers,
     body: req.body ? JSON.stringify(req.body) : undefined,
     cache: "no-store",
   });
@@ -48,4 +55,9 @@ export async function callArca<T = unknown>(req: ArcaRequest): Promise<ArcaResul
     }
   }
   return { ok: res.ok, status: res.status, data: data as T };
+}
+
+/** Read Idempotency-Key from an incoming client request (if present). */
+export function readIdempotencyKey(req: Request): string | null {
+  return req.headers.get("idempotency-key")?.trim() || null;
 }

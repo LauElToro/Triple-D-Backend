@@ -1,5 +1,5 @@
 import { authorizeArca, meterArca } from "@/interface/http/arcaAuth";
-import { callArca } from "@/infrastructure/arca/client";
+import { callArca, readIdempotencyKey } from "@/infrastructure/arca/client";
 import { ok, error, handleError } from "@/interface/http/responses";
 
 export const runtime = "nodejs";
@@ -20,7 +20,12 @@ export async function POST(req: Request) {
       return error(400, "Falta cuit_emisor (configurá el CUIT de la organización)", "missing_cuit");
     }
 
-    const result = await callArca({ method: "POST", path: "/api/comprobantes", body });
+    const result = await callArca({
+      method: "POST",
+      path: "/api/comprobantes",
+      body,
+      idempotencyKey: readIdempotencyKey(req),
+    });
     // A successful comprobante is one billable metered unit.
     await meterArca(ctx, "/arca/comprobantes", "POST", result.status, result.ok ? 1 : 0);
 
